@@ -53,6 +53,11 @@
           "default": ":memory:",
           "description": "Path to DuckDB database file (use :memory: for in-memory)"
         },
+        "duckdb-notebook.binaryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a custom DuckDB binary with extensions (e.g., sstream support). Leave empty to use built-in @duckdb/node-api."
+        },
         "duckdb-notebook.languageServer.trace": {
           "type": "string",
           "enum": ["off", "messages", "verbose"],

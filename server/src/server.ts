@@ -112,6 +112,10 @@ const DUCKDB_FUNCTIONS: Record<string, string> = {
     'READ_PARQUET': 'read_parquet(path, ...) → TABLE\nRead Parquet file(s).',
     'READ_JSON': 'read_json(path, ...) → TABLE\nRead JSON file(s).',
     'READ_JSON_AUTO': 'read_json_auto(path) → TABLE\nRead JSON with auto-detection.',
+    // SStream extension
+    'SSTREAM_SCAN': "sstream_scan(path) → TABLE\nRead a Cosmos Structured Stream (.ss) file.\nSupports V2-V4 embedded data (Legacy & Parquet) and V6 Parquet-embedded.\n\nOptions:\n  partition_filter: VARCHAR — comma-separated partition indices\n  column_group_filter: VARCHAR — comma-separated column group indices\n\nExample:\n  SELECT * FROM sstream_scan('data.ss');\n  SELECT * FROM sstream_scan('data.ss', partition_filter='0,1');",
+    'READ_SSTREAM': "read_sstream(path) → TABLE\nAlias for sstream_scan(). Read a Cosmos Structured Stream (.ss) file.\n\nExample:\n  SELECT * FROM read_sstream('data.ss');",
+    'SSTREAM_METADATA': "sstream_metadata(path) → TABLE\nRead metadata from a Structured Stream (.ss) file.\n\nReturns: file_path, version, partition_count, column_group_count,\n  total_row_count, data_unit_count, schema_xml, data_format,\n  crc_valid, file_count, is_parquet_embedded\n\nExample:\n  SELECT * FROM sstream_metadata('data.ss');",
     // Types
     'TRY_CAST': 'try_cast(expr AS type) → type or NULL\nCast with NULL on failure.',
     'TYPEOF': 'typeof(expr) → VARCHAR\nReturn type name of expression.',

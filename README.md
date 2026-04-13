@@ -35,6 +35,31 @@ SELECT region, SUM(amount) AS total FROM sales GROUP BY region;
 |---------|---------|-------------|
 | `duckdb-notebook.maxRows` | `1000` | Maximum rows to display |
 | `duckdb-notebook.databasePath` | `:memory:` | Database path (`:memory:` for in-memory) |
+| `duckdb-notebook.binaryPath` | `""` | Path to custom DuckDB binary with extensions (e.g. sstream) |
+
+## SStream Extension Support
+
+To query Cosmos Structured Stream (`.ss`) files, point `binaryPath` to a DuckDB binary that includes the sstream extension:
+
+```jsonc
+// .vscode/settings.json
+{
+    "duckdb-notebook.binaryPath": "D:/repos/duckdb1/build/release/Release/duckdb.exe"
+}
+```
+
+Then use sstream functions in notebook cells:
+
+```sql
+-- Read metadata
+SELECT * FROM sstream_metadata('path/to/file.ss');
+
+-- Read data (V2-V4 Legacy, V6 Parquet-embedded)
+SELECT * FROM sstream_scan('path/to/file.ss') LIMIT 100;
+
+-- Auto-detect .ss files
+SELECT * FROM 'path/to/file.ss' LIMIT 100;
+```
 
 ## Development
 

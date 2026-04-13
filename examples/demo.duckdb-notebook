@@ -3,7 +3,7 @@
     {
       "kind": "markdown",
       "language": "markdown",
-      "value": "# DuckDB Notebook Demo\n\nWelcome! Each cell below executes SQL against an in-memory DuckDB instance."
+      "value": "# DuckDB Notebook Demo\n\nWelcome! Each cell below executes SQL against DuckDB.\n\n> **Tip:** Configure `duckdb-notebook.binaryPath` in VS Code settings to point to a custom DuckDB binary with sstream extension support."
     },
     {
       "kind": "code",
@@ -26,14 +26,29 @@
       "value": "-- Aggregation\nSELECT \n    city,\n    count(*) AS user_count,\n    avg(age) AS avg_age,\n    min(age) AS youngest,\n    max(age) AS oldest\nFROM users\nGROUP BY city\nORDER BY user_count DESC;"
     },
     {
-      "kind": "code",
-      "language": "duckdb-sql",
-      "value": "-- Window functions\nSELECT \n    name,\n    city,\n    age,\n    ROW_NUMBER() OVER (PARTITION BY city ORDER BY age DESC) AS rank_in_city,\n    age - AVG(age) OVER () AS age_diff_from_avg\nFROM users;"
+      "kind": "markdown",
+      "language": "markdown",
+      "value": "## SStream Extension\n\nThe following cells demonstrate reading Cosmos Structured Stream (.ss) files.\nRequires `duckdb-notebook.binaryPath` pointing to a DuckDB binary with sstream extension."
     },
     {
       "kind": "code",
       "language": "duckdb-sql",
-      "value": "-- Read files\n-- SELECT * FROM read_csv_auto('data.csv') LIMIT 10;\n-- SELECT * FROM read_parquet('data.parquet') LIMIT 10;\nSELECT 'Edit this cell to query your own files!' AS tip;"
+      "value": "-- Read SStream metadata\n-- SELECT * FROM sstream_metadata('path/to/file.ss');"
+    },
+    {
+      "kind": "code",
+      "language": "duckdb-sql",
+      "value": "-- Read SStream data (V2-V4 Legacy or V6 Parquet-embedded)\n-- SELECT * FROM sstream_scan('path/to/file.ss') LIMIT 100;"
+    },
+    {
+      "kind": "code",
+      "language": "duckdb-sql",
+      "value": "-- Auto-detect .ss files\n-- SELECT * FROM 'path/to/file.ss' LIMIT 100;"
+    },
+    {
+      "kind": "code",
+      "language": "duckdb-sql",
+      "value": "-- Read files\n-- SELECT * FROM read_csv_auto('data.csv') LIMIT 10;\n-- SELECT * FROM read_parquet('data.parquet') LIMIT 10;\nSELECT 'Edit cells above to query your own files!' AS tip;"
     }
   ]
 }
