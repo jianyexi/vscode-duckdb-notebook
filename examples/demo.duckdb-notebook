@@ -1,0 +1,39 @@
+{
+  "cells": [
+    {
+      "kind": "markdown",
+      "language": "markdown",
+      "value": "# DuckDB Notebook Demo\n\nWelcome! Each cell below executes SQL against an in-memory DuckDB instance."
+    },
+    {
+      "kind": "code",
+      "language": "duckdb-sql",
+      "value": "-- Check DuckDB version\nSELECT version() AS duckdb_version;"
+    },
+    {
+      "kind": "code",
+      "language": "duckdb-sql",
+      "value": "-- Create a sample table\nCREATE TABLE users (\n    id INTEGER PRIMARY KEY,\n    name VARCHAR,\n    age INTEGER,\n    city VARCHAR\n);\n\nINSERT INTO users VALUES\n    (1, 'Alice', 30, 'New York'),\n    (2, 'Bob', 25, 'San Francisco'),\n    (3, 'Charlie', 35, 'Seattle'),\n    (4, 'Diana', 28, 'New York'),\n    (5, 'Eve', 32, 'San Francisco');"
+    },
+    {
+      "kind": "code",
+      "language": "duckdb-sql",
+      "value": "-- Query the data\nSELECT * FROM users ORDER BY age DESC;"
+    },
+    {
+      "kind": "code",
+      "language": "duckdb-sql",
+      "value": "-- Aggregation\nSELECT \n    city,\n    count(*) AS user_count,\n    avg(age) AS avg_age,\n    min(age) AS youngest,\n    max(age) AS oldest\nFROM users\nGROUP BY city\nORDER BY user_count DESC;"
+    },
+    {
+      "kind": "code",
+      "language": "duckdb-sql",
+      "value": "-- Window functions\nSELECT \n    name,\n    city,\n    age,\n    ROW_NUMBER() OVER (PARTITION BY city ORDER BY age DESC) AS rank_in_city,\n    age - AVG(age) OVER () AS age_diff_from_avg\nFROM users;"
+    },
+    {
+      "kind": "code",
+      "language": "duckdb-sql",
+      "value": "-- Read files\n-- SELECT * FROM read_csv_auto('data.csv') LIMIT 10;\n-- SELECT * FROM read_parquet('data.parquet') LIMIT 10;\nSELECT 'Edit this cell to query your own files!' AS tip;"
+    }
+  ]
+}
