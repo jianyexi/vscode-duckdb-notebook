@@ -57,18 +57,10 @@ export class DuckDBController {
 
         try {
             const conn = this.getConnection(notebook);
-            // Split on semicolons for multi-statement, execute last one with results
-            const statements = sql.split(/;\s*(?=\S)/).filter(s => s.trim());
+            const result = await conn.query(sql);
 
-            let lastResult = null;
-            for (const stmt of statements) {
-                const trimmed = stmt.replace(/;\s*$/, '').trim();
-                if (!trimmed) { continue; }
-                lastResult = await conn.query(trimmed);
-            }
-
-            if (lastResult && lastResult.columns.length > 0) {
-                const html = renderResultToHtml(lastResult);
+            if (result && result.columns.length > 0) {
+                const html = renderResultToHtml(result);
                 execution.replaceOutput([
                     new vscode.NotebookCellOutput([
                         vscode.NotebookCellOutputItem.text(html, 'text/html'),
@@ -79,8 +71,8 @@ export class DuckDBController {
                     ])
                 ]);
             } else {
-                const msg = lastResult
-                    ? `Query OK (${lastResult.elapsed}ms)`
+                const msg = result
+                    ? `Query OK (${result.elapsed}ms)`
                     : 'No results';
                 execution.replaceOutput([
                     new vscode.NotebookCellOutput([

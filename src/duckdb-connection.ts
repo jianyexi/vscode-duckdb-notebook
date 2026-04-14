@@ -154,43 +154,52 @@ export class DuckDBConnectionManager {
     }
 
     private parseJsonOutput(output: string, maxRows: number, elapsed: number, sql: string): QueryResult {
-        if (!output) {
-            return { columns: [], types: [], rows: [], rowCount: 0, totalRows: 0, truncated: false, elapsed, statement: sql.slice(0, 100) };
-        }
+        const empty: QueryResult = { columns: [], types: [], rows: [], rowCount: 0, totalRows: 0, truncated: false, elapsed, statement: sql.slice(0, 100) };
+        if (!output) { return empty; }
 
+        // Try whole output as single JSON array (common single-SELECT case)
         try {
-            // DuckDB .mode json outputs a JSON array
             const parsed = JSON.parse(output) as Record<string, unknown>[];
-            if (!Array.isArray(parsed) || parsed.length === 0) {
-                return { columns: [], types: [], rows: [], rowCount: 0, totalRows: 0, truncated: false, elapsed, statement: sql.slice(0, 100) };
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return this.jsonToResult(parsed, maxRows, elapsed, sql);
             }
+        } catch { /* multi-statement or non-JSON */ }
 
-            const columns = Object.keys(parsed[0]);
-            const types = columns.map(() => 'VARCHAR'); // JSON mode doesn't preserve types
-            const totalRows = parsed.length;
-            const truncated = totalRows > maxRows;
-            const rows = parsed.slice(0, maxRows).map(row =>
-                columns.map(col => row[col] ?? null)
-            );
-
-            return { columns, types, rows, rowCount: rows.length, totalRows, truncated, elapsed, statement: sql.slice(0, 100) };
-        } catch {
-            // If JSON parsing fails, try to parse as plain text lines
-            const lines = output.split('\n').filter(l => l.trim());
-            if (lines.length === 0) {
-                return { columns: [], types: [], rows: [], rowCount: 0, totalRows: 0, truncated: false, elapsed, statement: sql.slice(0, 100) };
+        // Multi-statement cells produce multiple JSON arrays.
+        // Find the LAST complete [...] JSON array in the output.
+        let lastStart = -1;
+        let lastEnd = -1;
+        let depth = 0;
+        for (let i = output.length - 1; i >= 0; i--) {
+            if (output[i] === ']' && lastEnd === -1) { lastEnd = i; depth = 1; }
+            else if (lastEnd !== -1) {
+                if (output[i] === ']') { depth++; }
+                if (output[i] === '[') { depth--; }
+                if (depth === 0) { lastStart = i; break; }
             }
-            return {
-                columns: ['result'],
-                types: ['VARCHAR'],
-                rows: lines.map(l => [l]),
-                rowCount: lines.length,
-                totalRows: lines.length,
-                truncated: false,
-                elapsed,
-                statement: sql.slice(0, 100),
-            };
         }
+        if (lastStart >= 0 && lastEnd > lastStart) {
+            try {
+                const parsed = JSON.parse(output.substring(lastStart, lastEnd + 1));
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return this.jsonToResult(parsed as Record<string, unknown>[], maxRows, elapsed, sql);
+                }
+            } catch { /* fall through */ }
+        }
+
+        // Pure DDL/DML — no JSON output
+        const lines = output.split('\n').filter(l => l.trim());
+        if (lines.length === 0) { return empty; }
+        return { columns: ['result'], types: ['VARCHAR'], rows: lines.map(l => [l]), rowCount: lines.length, totalRows: lines.length, truncated: false, elapsed, statement: sql.slice(0, 100) };
+    }
+
+    private jsonToResult(parsed: Record<string, unknown>[], maxRows: number, elapsed: number, sql: string): QueryResult {
+        const columns = Object.keys(parsed[0]);
+        const types = columns.map(() => 'VARCHAR');
+        const totalRows = parsed.length;
+        const truncated = totalRows > maxRows;
+        const rows = parsed.slice(0, maxRows).map(row => columns.map(col => row[col] ?? null));
+        return { columns, types, rows, rowCount: rows.length, totalRows, truncated, elapsed, statement: sql.slice(0, 100) };
     }
 
     // ─── Public API ──────────────────────────────────────────────────────
