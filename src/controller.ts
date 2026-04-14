@@ -65,7 +65,7 @@ export class DuckDBController {
                     new vscode.NotebookCellOutput([
                         vscode.NotebookCellOutputItem.text(html, 'text/html'),
                         vscode.NotebookCellOutputItem.text(
-                            this.formatPlainText(lastResult),
+                            this.formatPlainText(result),
                             'text/plain'
                         ),
                     ])
