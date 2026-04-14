@@ -76,57 +76,81 @@ export class DuckDBConnectionManager {
         };
     }
 
-    // ─── Binary mode (custom duckdb.exe with extensions) ─────────────────
+    // ─── Binary mode (persistent duckdb.exe with extensions) ─────────────
 
-    private async queryBinary(sql: string): Promise<QueryResult> {
-        const { binaryPath, maxRows, dbPath } = this.getConfig();
-        const start = Date.now();
+    private proc: cp.ChildProcess | null = null;
 
-        // Build the command: pipe SQL into duckdb CLI with CSV output
-        const limitedSql = `.mode json\n.headers on\n${sql}`;
-        const result = await this.execDuckDB(binaryPath, dbPath, limitedSql);
-        const elapsed = Date.now() - start;
-
-        if (result.error) {
-            throw new Error(result.error);
+    private ensureBinaryProcess(): cp.ChildProcess {
+        if (this.proc && !this.proc.killed) {
+            return this.proc;
         }
-
-        return this.parseJsonOutput(result.stdout, maxRows, elapsed, sql);
+        const { binaryPath, dbPath } = this.getConfig();
+        const args = dbPath !== ':memory:' ? [dbPath] : [];
+        this.proc = cp.spawn(binaryPath, args, {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            windowsHide: true,
+        });
+        this.proc.on('exit', () => { this.proc = null; });
+        return this.proc;
     }
 
-    private execDuckDB(binaryPath: string, dbPath: string, sql: string): Promise<{ stdout: string; error: string }> {
-        return new Promise((resolve) => {
-            const args = dbPath !== ':memory:' ? [dbPath] : [];
-            const proc = cp.spawn(binaryPath, args, {
-                stdio: ['pipe', 'pipe', 'pipe'],
-                windowsHide: true,
-            });
+    private async queryBinary(sql: string): Promise<QueryResult> {
+        const { maxRows } = this.getConfig();
+        const start = Date.now();
+        const END_MARKER = '___DUCKDB_NB_END___';
 
+        const proc = this.ensureBinaryProcess();
+        if (!proc.stdin || !proc.stdout || !proc.stderr) {
+            throw new Error('DuckDB process streams not available');
+        }
+
+        // Send SQL, then a sentinel SELECT so we know when output is done
+        const fullSql = `.mode json\n${sql}\nSELECT '${END_MARKER}' AS __end;\n`;
+
+        const result = await new Promise<{ stdout: string; error: string }>((resolve) => {
             let stdout = '';
             let stderr = '';
+            let settled = false;
 
-            proc.stdout.on('data', (data: Buffer) => { stdout += data.toString(); });
-            proc.stderr.on('data', (data: Buffer) => { stderr += data.toString(); });
+            const finish = () => {
+                if (settled) { return; }
+                settled = true;
+                proc.stdout!.removeListener('data', onOut);
+                proc.stderr!.removeListener('data', onErr);
+                // Strip the end-marker SELECT output from stdout
+                const markerJson = `[{"__end":"${END_MARKER}"}]`;
+                const mjIdx = stdout.indexOf(markerJson);
+                if (mjIdx >= 0) {
+                    stdout = stdout.substring(0, mjIdx);
+                } else {
+                    const idx = stdout.indexOf(END_MARKER);
+                    if (idx >= 0) {
+                        stdout = stdout.substring(0, idx);
+                    }
+                }
+                // Remove any trailing partial JSON from the marker query
+                stdout = stdout.replace(/\[\{"__end":"?\s*$/, '').trim();
+                resolve({ stdout: stdout.trim(), error: stderr.trim() });
+            };
 
-            proc.on('close', () => {
-                // DuckDB CLI outputs errors to stderr
-                const error = stderr.trim();
-                resolve({ stdout: stdout.trim(), error: error || '' });
-            });
+            const onOut = (data: Buffer) => {
+                stdout += data.toString();
+                if (stdout.includes(END_MARKER)) { finish(); }
+            };
+            const onErr = (data: Buffer) => { stderr += data.toString(); };
 
-            proc.on('error', (err) => {
-                resolve({ stdout: '', error: `Failed to start DuckDB: ${err.message}` });
-            });
+            proc.stdout!.on('data', onOut);
+            proc.stderr!.on('data', onErr);
+            setTimeout(() => { if (!settled) { finish(); } }, 120000);
 
-            proc.stdin.write(sql);
-            proc.stdin.end();
-
-            // Timeout after 60 seconds
-            setTimeout(() => {
-                try { proc.kill(); } catch { /* ignore */ }
-                resolve({ stdout: '', error: 'Query timed out (60s)' });
-            }, 60000);
+            proc.stdin!.write(fullSql);
         });
+
+        const elapsed = Date.now() - start;
+        if (result.error && !result.stdout) {
+            throw new Error(result.error);
+        }
+        return this.parseJsonOutput(result.stdout, maxRows, elapsed, sql);
     }
 
     private parseJsonOutput(output: string, maxRows: number, elapsed: number, sql: string): QueryResult {
@@ -186,6 +210,11 @@ export class DuckDBConnectionManager {
         if (this.instance) {
             this.instance.closeSync();
             this.instance = null;
+        }
+        if (this.proc && !this.proc.killed) {
+            this.proc.stdin?.write('.quit\n');
+            setTimeout(() => { try { this.proc?.kill(); } catch {} }, 1000);
+            this.proc = null;
         }
     }
 }
