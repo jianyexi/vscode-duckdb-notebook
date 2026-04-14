@@ -57,26 +57,26 @@ export class DuckDBController {
 
         try {
             const conn = this.getConnection(notebook);
-            const result = await conn.query(sql);
+            const results = await conn.query(sql);
 
-            if (result && result.columns.length > 0) {
-                const html = renderResultToHtml(result);
-                execution.replaceOutput([
-                    new vscode.NotebookCellOutput([
-                        vscode.NotebookCellOutputItem.text(html, 'text/html'),
-                        vscode.NotebookCellOutputItem.text(
-                            this.formatPlainText(result),
-                            'text/plain'
-                        ),
-                    ])
-                ]);
+            // Build one output per result set
+            const outputs: vscode.NotebookCellOutput[] = [];
+            for (const result of results) {
+                if (result.columns.length > 0) {
+                    outputs.push(new vscode.NotebookCellOutput([
+                        vscode.NotebookCellOutputItem.text(renderResultToHtml(result), 'text/html'),
+                        vscode.NotebookCellOutputItem.text(this.formatPlainText(result), 'text/plain'),
+                    ]));
+                }
+            }
+
+            if (outputs.length > 0) {
+                execution.replaceOutput(outputs);
             } else {
-                const msg = result
-                    ? `Query OK (${result.elapsed}ms)`
-                    : 'No results';
+                const elapsed = results.length > 0 ? results[results.length - 1].elapsed : 0;
                 execution.replaceOutput([
                     new vscode.NotebookCellOutput([
-                        vscode.NotebookCellOutputItem.text(msg, 'text/plain')
+                        vscode.NotebookCellOutputItem.text(`Query OK (${elapsed}ms)`, 'text/plain')
                     ])
                 ]);
             }

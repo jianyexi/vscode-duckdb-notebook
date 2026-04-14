@@ -49,7 +49,7 @@ export class DuckDBConnectionManager {
         return this.connection;
     }
 
-    private async queryNative(sql: string): Promise<QueryResult> {
+    private async queryNative(sql: string): Promise<QueryResult[]> {
         const { maxRows } = this.getConfig();
         const conn = await this.ensureNativeConnection();
         const start = Date.now();
@@ -69,11 +69,11 @@ export class DuckDBConnectionManager {
         const truncated = totalRows > maxRows;
         const rows = allRows.slice(0, maxRows);
 
-        return {
+        return [{
             columns, types, rows,
             rowCount: rows.length, totalRows, truncated, elapsed,
             statement: sql.slice(0, 100),
-        };
+        }];
     }
 
     // ─── Binary mode (persistent duckdb.exe with extensions) ─────────────
@@ -94,7 +94,7 @@ export class DuckDBConnectionManager {
         return this.proc;
     }
 
-    private async queryBinary(sql: string): Promise<QueryResult> {
+    private async queryBinary(sql: string): Promise<QueryResult[]> {
         const { maxRows } = this.getConfig();
         const start = Date.now();
         const END_MARKER = '___DUCKDB_NB_END___';
@@ -150,47 +150,56 @@ export class DuckDBConnectionManager {
         if (result.error && !result.stdout) {
             throw new Error(result.error);
         }
-        return this.parseJsonOutput(result.stdout, maxRows, elapsed, sql);
+        return this.parseAllJsonOutputs(result.stdout, maxRows, elapsed, sql);
     }
 
-    private parseJsonOutput(output: string, maxRows: number, elapsed: number, sql: string): QueryResult {
-        const empty: QueryResult = { columns: [], types: [], rows: [], rowCount: 0, totalRows: 0, truncated: false, elapsed, statement: sql.slice(0, 100) };
-        if (!output) { return empty; }
+    private parseAllJsonOutputs(output: string, maxRows: number, elapsed: number, sql: string): QueryResult[] {
+        if (!output) { return []; }
 
-        // Try whole output as single JSON array (common single-SELECT case)
-        try {
-            const parsed = JSON.parse(output) as Record<string, unknown>[];
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                return this.jsonToResult(parsed, maxRows, elapsed, sql);
-            }
-        } catch { /* multi-statement or non-JSON */ }
-
-        // Multi-statement cells produce multiple JSON arrays.
-        // Find the LAST complete [...] JSON array in the output.
-        let lastStart = -1;
-        let lastEnd = -1;
-        let depth = 0;
-        for (let i = output.length - 1; i >= 0; i--) {
-            if (output[i] === ']' && lastEnd === -1) { lastEnd = i; depth = 1; }
-            else if (lastEnd !== -1) {
-                if (output[i] === ']') { depth++; }
-                if (output[i] === '[') { depth--; }
-                if (depth === 0) { lastStart = i; break; }
-            }
-        }
-        if (lastStart >= 0 && lastEnd > lastStart) {
-            try {
-                const parsed = JSON.parse(output.substring(lastStart, lastEnd + 1));
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    return this.jsonToResult(parsed as Record<string, unknown>[], maxRows, elapsed, sql);
+        // Find ALL complete JSON arrays [...] in the output
+        const results: QueryResult[] = [];
+        let i = 0;
+        while (i < output.length) {
+            if (output[i] === '[') {
+                // Find matching ]
+                let depth = 1;
+                let j = i + 1;
+                while (j < output.length && depth > 0) {
+                    if (output[j] === '[') { depth++; }
+                    if (output[j] === ']') { depth--; }
+                    j++;
                 }
-            } catch { /* fall through */ }
+                if (depth === 0) {
+                    const chunk = output.substring(i, j);
+                    try {
+                        const parsed = JSON.parse(chunk);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            results.push(this.jsonToResult(parsed as Record<string, unknown>[], maxRows, elapsed, sql));
+                        }
+                    } catch { /* skip malformed */ }
+                    i = j;
+                } else {
+                    i++;
+                }
+            } else {
+                i++;
+            }
         }
 
-        // Pure DDL/DML — no JSON output
-        const lines = output.split('\n').filter(l => l.trim());
-        if (lines.length === 0) { return empty; }
-        return { columns: ['result'], types: ['VARCHAR'], rows: lines.map(l => [l]), rowCount: lines.length, totalRows: lines.length, truncated: false, elapsed, statement: sql.slice(0, 100) };
+        // If no JSON arrays found, return non-JSON lines as text
+        if (results.length === 0) {
+            const lines = output.split('\n').filter(l => l.trim());
+            if (lines.length > 0) {
+                results.push({
+                    columns: ['result'], types: ['VARCHAR'],
+                    rows: lines.map(l => [l]),
+                    rowCount: lines.length, totalRows: lines.length,
+                    truncated: false, elapsed, statement: sql.slice(0, 100),
+                });
+            }
+        }
+
+        return results;
     }
 
     private jsonToResult(parsed: Record<string, unknown>[], maxRows: number, elapsed: number, sql: string): QueryResult {
@@ -204,7 +213,7 @@ export class DuckDBConnectionManager {
 
     // ─── Public API ──────────────────────────────────────────────────────
 
-    async query(sql: string): Promise<QueryResult> {
+    async query(sql: string): Promise<QueryResult[]> {
         if (this.useBinaryMode()) {
             return this.queryBinary(sql);
         }
