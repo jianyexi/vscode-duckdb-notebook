@@ -15,10 +15,21 @@ Interactive SQL notebooks powered by [DuckDB](https://duckdb.org/) — write, ex
 ## Getting Started
 
 1. Open the command palette (`Ctrl+Shift+P`) → **DuckDB: New DuckDB Jupyter Notebook**
-2. Or create a new Jupyter notebook and select **DuckDB SQL** as the kernel
-3. Or open any existing `.ipynb` file and choose the DuckDB SQL kernel
-4. Write SQL in code cells, execute with `Shift+Enter` or the ▶ button
-5. Add markdown cells for documentation
+2. Or create a new `.ipynb` file and select the DuckDB kernel (see below)
+3. Write SQL in code cells, execute with `Shift+Enter` or the ▶ button
+4. Add markdown cells for documentation
+
+### Selecting the DuckDB Kernel
+
+When you open a Jupyter notebook, you need to select **DuckDB SQL** as the kernel:
+
+1. Click **Select Kernel** in the top-right corner of the notebook editor
+2. Choose **Select Another Kernel…**
+3. Select **DuckDB SQL** from the kernel list
+
+![Select DuckDB SQL Kernel](media/select-kernel.png)
+
+> **Tip:** If you create notebooks using the **DuckDB: New DuckDB Jupyter Notebook** command, the kernel is pre-selected automatically.
 
 ## Example
 

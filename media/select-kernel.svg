@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="120" viewBox="0 0 480 120">
+  <defs>
+    <style>
+      .bg { fill: #1e1e1e; }
+      .header { fill: #cccccc; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+      .input-bg { fill: #3c3c3c; stroke: #007acc; stroke-width: 1.5; rx: 3; }
+      .input-text { fill: #888888; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+      .item-bg { fill: #04395e; rx: 3; }
+      .item-text { fill: #ffffff; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+      .arrow { fill: #cccccc; font-family: 'Segoe UI', sans-serif; font-size: 16px; }
+    </style>
+  </defs>
+  <rect class="bg" width="480" height="120" rx="6"/>
+  <!-- Back arrow and title -->
+  <text class="arrow" x="20" y="28">←</text>
+  <text class="header" x="160" y="28" text-anchor="middle">Select Another Kernel</text>
+  <!-- Search input -->
+  <rect class="input-bg" x="16" y="40" width="448" height="28"/>
+  <text class="input-text" x="24" y="59">Type to choose a kernel source</text>
+  <!-- DuckDB SQL item (selected/highlighted) -->
+  <rect class="item-bg" x="16" y="76" width="448" height="28"/>
+  <text class="item-text" x="24" y="95">DuckDB SQL</text>
+</svg>
