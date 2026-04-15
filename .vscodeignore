@@ -1,4 +1,10 @@
+src/
+server/
 node_modules/
-dist/
-*.vsix
 .vscode-test/
+*.vsix
+esbuild.js
+tsconfig.json
+.gitignore
+**/*.ts
+**/*.map

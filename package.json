@@ -1,30 +1,24 @@
 {
   "name": "duckdb-notebook",
-  "displayName": "DuckDB Notebook",
-  "description": "Interactive DuckDB SQL notebooks with language server support",
-  "version": "0.1.0",
+  "displayName": "DuckDB Jupyter Kernel",
+  "description": "DuckDB SQL kernel for Jupyter notebooks with language server support",
+  "version": "0.2.0",
   "publisher": "duckdb-notebook",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicholasgasior/vscode-duckdb-notebook"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": ["Notebooks", "Programming Languages"],
   "keywords": ["duckdb", "sql", "notebook", "database"],
   "activationEvents": [
-    "onNotebook:duckdb-notebook",
-    "onLanguage:duckdb-sql"
+    "onNotebook:jupyter-notebook"
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "notebooks": [
-      {
-        "type": "duckdb-notebook",
-        "displayName": "DuckDB Notebook",
-        "selector": [
-          { "filenamePattern": "*.duckdb-notebook" },
-          { "filenamePattern": "*.ddb" }
-        ]
-      }
-    ],
     "languages": [
       {
         "id": "duckdb-sql",
@@ -33,10 +27,22 @@
         "configuration": "./language-configuration.json"
       }
     ],
+    "grammars": [
+      {
+        "language": "duckdb-sql",
+        "scopeName": "source.sql",
+        "path": "./syntaxes/duckdb-sql.tmLanguage.json"
+      }
+    ],
     "commands": [
       {
         "command": "duckdb-notebook.new",
-        "title": "New DuckDB Notebook",
+        "title": "New DuckDB Jupyter Notebook",
+        "category": "DuckDB"
+      },
+      {
+        "command": "duckdb-notebook.downloadBinary",
+        "title": "Download DuckDB Binary",
         "category": "DuckDB"
       }
     ],
@@ -56,7 +62,12 @@
         "duckdb-notebook.binaryPath": {
           "type": "string",
           "default": "",
-          "description": "Path to a custom DuckDB binary with extensions (e.g., sstream support). Leave empty to use built-in @duckdb/node-api."
+          "description": "Path to a custom DuckDB binary. Set to 'auto' to download automatically. Leave empty to use built-in @duckdb/node-api."
+        },
+        "duckdb-notebook.binaryVersion": {
+          "type": "string",
+          "default": "",
+          "description": "DuckDB version to download (e.g. 'v1.2.0'). Leave empty for latest."
         },
         "duckdb-notebook.languageServer.trace": {
           "type": "string",

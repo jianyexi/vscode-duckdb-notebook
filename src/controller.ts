@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { DuckDBConnectionManager } from './duckdb-connection';
 import { renderResultToHtml, renderErrorToHtml } from './table-renderer';
 
-const NOTEBOOK_TYPE = 'duckdb-notebook';
+const NOTEBOOK_TYPE = 'jupyter-notebook';
 
 export class DuckDBController {
     private readonly controller: vscode.NotebookController;
@@ -11,15 +11,18 @@ export class DuckDBController {
 
     constructor() {
         this.controller = vscode.notebooks.createNotebookController(
-            'duckdb-notebook-controller',
+            'duckdb-kernel',
             NOTEBOOK_TYPE,
-            'DuckDB'
+            'DuckDB SQL'
         );
 
-        this.controller.supportedLanguages = ['duckdb-sql', 'sql'];
+        this.controller.supportedLanguages = ['sql', 'duckdb-sql'];
         this.controller.supportsExecutionOrder = true;
         this.controller.description = 'Execute SQL queries with DuckDB';
         this.controller.executeHandler = this.executeCells.bind(this);
+        
+        // Set kernel information for Jupyter compatibility
+        this.controller.detail = 'DuckDB SQL kernel for Jupyter notebooks';
     }
 
     private getConnection(notebook: vscode.NotebookDocument): DuckDBConnectionManager {

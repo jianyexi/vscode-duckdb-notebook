@@ -1,10 +1,10 @@
-# DuckDB Notebook for VS Code
+# DuckDB Jupyter Kernel for VS Code
 
-Interactive SQL notebooks powered by [DuckDB](https://duckdb.org/) — write, execute, and visualize SQL queries in a notebook-style interface with language server support.
+Interactive SQL notebooks powered by [DuckDB](https://duckdb.org/) — write, execute, and visualize SQL queries in Jupyter notebooks with a custom DuckDB kernel and language server support.
 
 ## Features
 
-- **📓 Notebook interface** — `.duckdb-notebook` files with code + markdown cells
+- **📓 Jupyter notebook support** — Standard `.ipynb` files with DuckDB SQL kernel
 - **⚡ DuckDB execution** — Run SQL cells against an in-memory DuckDB instance
 - **🎨 Rich result tables** — Query results rendered as styled HTML tables
 - **💡 SQL IntelliSense** — Autocomplete for SQL keywords, DuckDB functions, and types
@@ -14,10 +14,11 @@ Interactive SQL notebooks powered by [DuckDB](https://duckdb.org/) — write, ex
 
 ## Getting Started
 
-1. Open the command palette (`Ctrl+Shift+P`) → **DuckDB: New DuckDB Notebook**
-2. Or open any `.duckdb-notebook` or `.ddb` file
-3. Write SQL in code cells, execute with `Shift+Enter` or the ▶ button
-4. Add markdown cells for documentation
+1. Open the command palette (`Ctrl+Shift+P`) → **DuckDB: New DuckDB Jupyter Notebook**
+2. Or create a new Jupyter notebook and select **DuckDB SQL** as the kernel
+3. Or open any existing `.ipynb` file and choose the DuckDB SQL kernel
+4. Write SQL in code cells, execute with `Shift+Enter` or the ▶ button
+5. Add markdown cells for documentation
 
 ## Example
 
@@ -35,31 +36,7 @@ SELECT region, SUM(amount) AS total FROM sales GROUP BY region;
 |---------|---------|-------------|
 | `duckdb-notebook.maxRows` | `1000` | Maximum rows to display |
 | `duckdb-notebook.databasePath` | `:memory:` | Database path (`:memory:` for in-memory) |
-| `duckdb-notebook.binaryPath` | `""` | Path to custom DuckDB binary with extensions (e.g. sstream) |
-
-## SStream Extension Support
-
-To query Cosmos Structured Stream (`.ss`) files, point `binaryPath` to a DuckDB binary that includes the sstream extension:
-
-```jsonc
-// .vscode/settings.json
-{
-    "duckdb-notebook.binaryPath": "D:/repos/duckdb1/build/release/Release/duckdb.exe"
-}
-```
-
-Then use sstream functions in notebook cells:
-
-```sql
--- Read metadata
-SELECT * FROM sstream_metadata('path/to/file.ss');
-
--- Read data (V2-V4 Legacy, V6 Parquet-embedded)
-SELECT * FROM sstream_scan('path/to/file.ss') LIMIT 100;
-
--- Auto-detect .ss files
-SELECT * FROM 'path/to/file.ss' LIMIT 100;
-```
+| `duckdb-notebook.binaryPath` | `""` | Path to a custom DuckDB binary with extensions |
 
 ## Development
 

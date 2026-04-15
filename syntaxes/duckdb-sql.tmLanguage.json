@@ -1,0 +1,534 @@
+{
+	"name": "DuckDB SQL",
+	"scopeName": "source.sql",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#create_statement"
+		},
+		{
+			"include": "#drop_statement"
+		},
+		{
+			"include": "#alter_statement"
+		},
+		{
+			"include": "#dml_keywords"
+		},
+		{
+			"include": "#duckdb_keywords"
+		},
+		{
+			"include": "#ddl_keywords"
+		},
+		{
+			"include": "#transaction_keywords"
+		},
+		{
+			"include": "#operator_keywords"
+		},
+		{
+			"include": "#duckdb_types"
+		},
+		{
+			"include": "#storage_types"
+		},
+		{
+			"include": "#storage_modifiers"
+		},
+		{
+			"include": "#duckdb_functions"
+		},
+		{
+			"include": "#aggregate_functions"
+		},
+		{
+			"include": "#window_functions"
+		},
+		{
+			"include": "#string_functions"
+		},
+		{
+			"include": "#datetime_functions"
+		},
+		{
+			"include": "#math_functions"
+		},
+		{
+			"include": "#conversion_functions"
+		},
+		{
+			"include": "#json_functions"
+		},
+		{
+			"include": "#system_functions"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#operators"
+		},
+		{
+			"include": "#other_keywords"
+		},
+		{
+			"include": "#variables"
+		}
+	],
+	"repository": {
+		"comments": {
+			"patterns": [
+				{
+					"begin": "(^[ \\t]+)?(?=--)",
+					"beginCaptures": {
+						"1": { "name": "punctuation.whitespace.comment.leading.sql" }
+					},
+					"end": "(?!\\G)",
+					"patterns": [
+						{
+							"begin": "--",
+							"beginCaptures": {
+								"0": { "name": "punctuation.definition.comment.sql" }
+							},
+							"end": "\\n",
+							"name": "comment.line.double-dash.sql"
+						}
+					]
+				},
+				{
+					"begin": "/\\*",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.comment.begin.sql" }
+					},
+					"end": "\\*/",
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.comment.end.sql" }
+					},
+					"name": "comment.block.sql"
+				}
+			]
+		},
+		"strings": {
+			"patterns": [
+				{
+					"match": "(')[^']*(')",
+					"name": "string.quoted.single.sql"
+				},
+				{
+					"begin": "'",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.string.begin.sql" }
+					},
+					"end": "'",
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.string.end.sql" }
+					},
+					"name": "string.quoted.single.sql",
+					"patterns": [
+						{
+							"match": "''",
+							"name": "constant.character.escape.sql"
+						}
+					]
+				},
+				{
+					"match": "(`)[^`\\\\]*(`)",
+					"name": "string.quoted.other.backtick.sql"
+				},
+				{
+					"begin": "`",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.string.begin.sql" }
+					},
+					"end": "`",
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.string.end.sql" }
+					},
+					"name": "string.quoted.other.backtick.sql"
+				},
+				{
+					"match": "(\")[^\"#]*(\")",
+					"name": "string.quoted.double.sql"
+				},
+				{
+					"begin": "\"",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.string.begin.sql" }
+					},
+					"end": "\"",
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.string.end.sql" }
+					},
+					"name": "string.quoted.double.sql"
+				},
+				{
+					"match": "(\\[)[^\\]]*(\\])",
+					"name": "text.bracketed"
+				}
+			]
+		},
+		"create_statement": {
+			"patterns": [
+				{
+					"captures": {
+						"1": { "name": "keyword.other.create.sql" },
+						"2": { "name": "keyword.other.sql" },
+						"5": { "name": "entity.name.function.sql" }
+					},
+					"match": "(?i:^\\s*(create(?:\\s+or\\s+replace)?)\\s+(aggregate|conversion|database|domain|function|group|(unique\\s+)?index|language|macro|operator class|operator|rule|schema|sequence|table|tablespace|trigger|type|user|view)\\s+)(['\"`]?)(\\w+)\\4",
+					"name": "meta.create.sql"
+				}
+			]
+		},
+		"drop_statement": {
+			"patterns": [
+				{
+					"captures": {
+						"1": { "name": "keyword.other.create.sql" },
+						"2": { "name": "keyword.other.sql" }
+					},
+					"match": "(?i:^\\s*(drop)\\s+(aggregate|conversion|database|domain|function|group|index|language|macro|operator class|operator|rule|schema|sequence|table|tablespace|trigger|type|user|view))",
+					"name": "meta.drop.sql"
+				},
+				{
+					"captures": {
+						"1": { "name": "keyword.other.create.sql" },
+						"2": { "name": "keyword.other.table.sql" },
+						"3": { "name": "entity.name.function.sql" },
+						"4": { "name": "keyword.other.cascade.sql" }
+					},
+					"match": "(?i:\\s*(drop)\\s+(table)\\s+(\\w+)(\\s+cascade)?\\b)",
+					"name": "meta.drop.sql"
+				}
+			]
+		},
+		"alter_statement": {
+			"patterns": [
+				{
+					"captures": {
+						"1": { "name": "keyword.other.create.sql" },
+						"2": { "name": "keyword.other.table.sql" }
+					},
+					"match": "(?i:^\\s*(alter)\\s+(aggregate|conversion|database|domain|function|group|index|language|operator class|operator|rule|schema|sequence|table|tablespace|trigger|type|user|view)\\s+)",
+					"name": "meta.alter.sql"
+				}
+			]
+		},
+		"dml_keywords": {
+			"patterns": [
+				{
+					"match": "(?i:\\b(select(\\s+(all|distinct))?|insert\\s+(ignore\\s+)?into|update|delete|from|set|where|group\\s+by|or|like|ilike|and|union(\\s+all)?|having|order\\s+by|limit|offset|cross\\s+join|join|straight_join|(inner|(left|right|full)(\\s+outer)?)\\s+join|natural(\\s+(inner|(left|right|full)(\\s+outer)?))?\\s+join|asof\\s+join|semi\\s+join|anti\\s+join|positional\\s+join|lateral\\s+join)\\b)",
+					"name": "keyword.other.DML.sql"
+				},
+				{
+					"match": "(?i:\\b(on|off|((is\\s+)?not\\s+)?null)\\b)",
+					"name": "keyword.other.DDL.create.II.sql"
+				},
+				{
+					"match": "(?i:\\bvalues\\b)",
+					"name": "keyword.other.DML.II.sql"
+				}
+			]
+		},
+		"duckdb_keywords": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(QUALIFY|PIVOT|UNPIVOT|SUMMARIZE|DESCRIBE|PRAGMA|INSTALL|LOAD|ATTACH|DETACH|COPY|EXPORT|IMPORT|RETURNING|EXCLUDE|REPLACE|COLUMNS|STRUCT_PACK|STRUCT_INSERT|UNNEST|GENERATE_SERIES|SAMPLE|USING SAMPLE|TABLESAMPLE|RECURSIVE|MATERIALIZED|IF NOT EXISTS|IF EXISTS|CASCADE|RESTRICT|TEMP|TEMPORARY|GLOB|SIMILAR TO|BETWEEN|FILTER|WITHIN GROUP|RESPECT NULLS|IGNORE NULLS)\\b",
+					"name": "keyword.other.duckdb.sql"
+				}
+			]
+		},
+		"ddl_keywords": {
+			"patterns": [
+				{
+					"match": "(?i:\\b(grant(\\swith\\sgrant\\soption)?|revoke)\\b)",
+					"name": "keyword.other.authorization.sql"
+				},
+				{
+					"match": "(?i:\\b(begin(\\s+work)?|start\\s+transaction|commit(\\s+work)?|rollback(\\s+work)?)\\b)",
+					"name": "keyword.other.LUW.sql"
+				},
+				{
+					"match": "(?i)\\bAS\\b",
+					"name": "keyword.other.alias.sql"
+				},
+				{
+					"match": "(?i)\\b(DESC|ASC)\\b",
+					"name": "keyword.other.order.sql"
+				},
+				{
+					"match": "(?i)\\b(CASE|WHEN|THEN|ELSE|END|IF|COALESCE|NULLIF|IFNULL)\\b",
+					"name": "keyword.control.sql"
+				},
+				{
+					"match": "(?i)\\b(OVER|PARTITION\\s+BY|ROWS|RANGE|UNBOUNDED|PRECEDING|FOLLOWING|CURRENT\\s+ROW|WINDOW)\\b",
+					"name": "keyword.other.window.sql"
+				},
+				{
+					"match": "(?i)\\b(EXISTS|IN|ANY|ALL|SOME|BETWEEN|LIKE|ILIKE|GLOB|SIMILAR\\s+TO|IS|NOT|AND|OR)\\b",
+					"name": "keyword.operator.logical.sql"
+				}
+			]
+		},
+		"transaction_keywords": {
+			"patterns": [
+				{
+					"match": "(?i:\\b(begin(\\s+work)?|start\\s+transaction|commit(\\s+work)?|rollback(\\s+work)?|savepoint|release)\\b)",
+					"name": "keyword.other.LUW.sql"
+				}
+			]
+		},
+		"operator_keywords": {
+			"patterns": [
+				{
+					"match": "\\*",
+					"name": "keyword.operator.star.sql"
+				},
+				{
+					"match": "[!<>]?=|<>|<|>|<=|>=",
+					"name": "keyword.operator.comparison.sql"
+				},
+				{
+					"match": "-|\\+|/|%",
+					"name": "keyword.operator.math.sql"
+				},
+				{
+					"match": "\\|\\|",
+					"name": "keyword.operator.concatenator.sql"
+				},
+				{
+					"match": "::",
+					"name": "keyword.operator.cast.sql"
+				}
+			]
+		},
+		"duckdb_types": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(HUGEINT|UHUGEINT|UTINYINT|USMALLINT|UINTEGER|UBIGINT|MAP|STRUCT|UNION|ENUM|LIST|ARRAY|BLOB|BITSTRING|UUID|JSON|INTERVAL|TIMESTAMP_S|TIMESTAMP_MS|TIMESTAMP_NS|TIMESTAMP WITH TIME ZONE|TIMESTAMPTZ|TIME WITH TIME ZONE|TIMETZ)\\b",
+					"name": "storage.type.sql"
+				}
+			]
+		},
+		"storage_types": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(bigint|bigserial|bit|boolean|bool|box|bytea|cidr|circle|date|double\\s+precision|double|float|float4|float8|inet|int|int2|int4|int8|integer|line|lseg|macaddr|money|oid|path|point|polygon|real|serial|smallint|smallserial|tinyint|sysdate|text|varchar|nvarchar|char|character|character\\s+varying|nchar|numeric|decimal|dec|timestamp|datetime|time|interval|blob|uuid|json|hugeint|uinteger|ubigint|usmallint|utinyint)\\b",
+					"name": "storage.type.sql"
+				},
+				{
+					"match": "(?i)\\b(bit\\s+varying|character\\s+(?:varying)?|var\\s+char|float|interval)\\((\\d+)\\)",
+					"captures": {
+						"1": { "name": "storage.type.sql" },
+						"2": { "name": "constant.numeric.sql" }
+					}
+				},
+				{
+					"match": "(?i)\\b(char|number|varchar\\d?)\\b(?:\\((\\d+)\\))?",
+					"captures": {
+						"1": { "name": "storage.type.sql" },
+						"2": { "name": "constant.numeric.sql" }
+					}
+				},
+				{
+					"match": "(?i)\\b(numeric|decimal)\\b(?:\\((\\d+),(\\d+)\\))?",
+					"captures": {
+						"1": { "name": "storage.type.sql" },
+						"2": { "name": "constant.numeric.sql" },
+						"3": { "name": "constant.numeric.sql" }
+					}
+				}
+			]
+		},
+		"storage_modifiers": {
+			"patterns": [
+				{
+					"match": "(?i:\\b((?:primary|foreign)\\s+key|references|on\\s+(delete|update)(\\s+cascade)?|nocheck|check|constraint|collate|default|unique|not\\s+null|autoincrement)\\b)",
+					"name": "storage.modifier.sql"
+				}
+			]
+		},
+		"duckdb_functions": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(read_csv|read_csv_auto|read_parquet|read_json|read_json_auto|read_json_objects|read_ndjson|read_ndjson_auto|read_ndjson_objects|scan_parquet|parquet_scan|parquet_metadata|parquet_schema|read_text|query_parquet|iceberg_scan|delta_scan|read_blob)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.duckdb.io.sql" }
+					}
+				},
+				{
+					"match": "(?i)\\b(list_value|list_aggregate|list_sort|list_reverse_sort|list_distinct|list_unique|list_contains|list_position|list_extract|list_slice|list_concat|list_prepend|list_append|list_cosine_similarity|list_distance|list_inner_product|list_transform|list_filter|list_reduce|list_zip|flatten|unnest|generate_series|range|generate_subscripts)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.duckdb.list.sql" }
+					}
+				},
+				{
+					"match": "(?i)\\b(struct_pack|struct_insert|struct_extract|row|map|map_from_entries|map_entries|map_keys|map_values|element_at|cardinality)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.duckdb.struct.sql" }
+					}
+				},
+				{
+					"match": "(?i)\\b(epoch_ms|epoch|make_date|make_time|make_timestamp|date_trunc|datetrunc|date_part|datepart|date_diff|datediff|date_add|dateadd|date_sub|time_bucket|last_day|monthname|dayname|yearweek|dayofweek|dayofyear|weekofyear|isodow|week|quarter|to_timestamp|strftime|strptime|current_date|current_time|current_timestamp|now|today|age)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.datetime.sql" }
+					}
+				},
+				{
+					"match": "(?i)\\b(regexp_matches|regexp_replace|regexp_extract|regexp_full_match|regexp_split_to_array|regexp_split_to_table)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.duckdb.regex.sql" }
+					}
+				},
+				{
+					"match": "(?i)\\b(hash|md5|sha256|encode|decode|base64|from_base64|to_base64|hex|from_hex|to_hex)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.duckdb.encoding.sql" }
+					}
+				},
+				{
+					"match": "(?i)\\b(typeof|current_schema|current_schemas|current_database|current_setting|set|reset|version)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.duckdb.utility.sql" }
+					}
+				},
+				{
+					"match": "(?i)\\b(enum_range|enum_first|enum_last|enum_code)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.duckdb.enum.sql" }
+					}
+				}
+			]
+		},
+		"aggregate_functions": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(approx_count_distinct|approx_quantile|arg_min|arg_max|avg|bit_and|bit_or|bit_xor|bool_and|bool_or|count|count_star|entropy|first|fsum|geomean|histogram|kurtosis|last|listagg|list|max|median|min|mode|product|quantile|quantile_cont|quantile_disc|regr_avgx|regr_avgy|regr_count|regr_intercept|regr_r2|regr_slope|regr_sxx|regr_sxy|regr_syy|skewness|stddev|stddev_pop|stddev_samp|string_agg|group_concat|sum|sumkahan|kahan_sum|var_pop|var_samp|variance)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.aggregate.sql" }
+					}
+				}
+			]
+		},
+		"window_functions": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(row_number|rank|dense_rank|ntile|cume_dist|percent_rank|first_value|last_value|nth_value|lag|lead)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.analytic.sql" }
+					}
+				}
+			]
+		},
+		"string_functions": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(ascii|chr|char|concat|concat_ws|contains|ends_with|starts_with|prefix|suffix|format|instr|left|length|len|char_length|character_length|lower|lcase|lpad|ltrim|nfc_normalize|normalize|upper|ucase|repeat|replace|reverse|right|rpad|rtrim|trim|printf|position|string_split|string_split_regex|strip_accents|substr|substring|translate|unicode|bar|bit_length|octet_length|levenshtein|jaccard|jaro_winkler_similarity|hamming|mismatches|editdist3|like_escape)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.string.sql" }
+					}
+				}
+			]
+		},
+		"datetime_functions": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(current_date|current_time|current_timestamp|date_trunc|date_part|date_diff|date_add|date_sub|extract|epoch|epoch_ms|make_date|make_time|make_timestamp|now|today|to_timestamp|strftime|strptime|age|last_day|monthname|dayname)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.datetime.sql" }
+					}
+				}
+			]
+		},
+		"math_functions": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(abs|acos|asin|atan|atan2|cbrt|ceil|ceiling|cos|cot|degrees|exp|floor|gamma|greatest|least|lgamma|ln|log|log2|log10|nextafter|pi|pow|power|radians|random|round|sign|sin|sqrt|tan|trunc|truncate|isnan|isinf|isfinite|even|factorial|gcd|lcm|bit_count)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.mathematical.sql" }
+					}
+				}
+			]
+		},
+		"conversion_functions": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(cast|try_cast|convert|try_convert|parse|try_parse)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.conversion.sql" }
+					}
+				}
+			]
+		},
+		"json_functions": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(json|json_array|json_array_length|json_contains|json_extract|json_extract_path|json_extract_path_text|json_extract_string|json_group_array|json_group_object|json_group_structure|json_keys|json_merge_patch|json_object|json_quote|json_serialize_sql|json_structure|json_transform|json_type|json_valid|json_value|from_json|to_json)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.json.sql" }
+					}
+				}
+			]
+		},
+		"system_functions": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(coalesce|nullif|ifnull|greatest|least|choose|iif|typeof|current_schema|current_schemas|current_database|txid_current|pg_typeof|alias|error|hash)\\b\\s*\\(",
+					"captures": {
+						"1": { "name": "support.function.system.sql" }
+					}
+				}
+			]
+		},
+		"numbers": {
+			"patterns": [
+				{
+					"match": "\\b\\d+\\.\\d+\\b",
+					"name": "constant.numeric.float.sql"
+				},
+				{
+					"match": "\\b\\d+\\b",
+					"name": "constant.numeric.sql"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"match": "::",
+					"name": "keyword.operator.cast.sql"
+				},
+				{
+					"match": "=>",
+					"name": "keyword.operator.arrow.sql"
+				},
+				{
+					"match": "->|->>",
+					"name": "keyword.operator.json.sql"
+				}
+			]
+		},
+		"other_keywords": {
+			"patterns": [
+				{
+					"match": "(?i)\\b(abort|absolute|access|action|add|admin|after|aggregate|also|alter|always|assertion|assignment|at|attach|attribute|backward|before|begin|by|cache|called|cascade|cascaded|catalog|chain|characteristics|checkpoint|class|close|cluster|collation|column|columns|comment|comments|committed|concurrently|configuration|conflict|connection|constraints|content|continue|conversion|copy|cost|create|cross|csv|cube|current|cursor|cycle|data|database|day|deallocate|declare|defaults|deferred|definer|delimiter|delimiters|depends|detach|dictionary|disable|discard|do|document|domain|drop|each|enable|encoding|encrypted|enum|escape|event|except|exclude|excluding|exclusive|execute|explain|export|extension|external|family|fetch|first|float|following|force|forward|function|functions|generated|global|granted|grouping|groups|handler|header|hold|hour|identity|if|immediate|immutable|implicit|import|include|including|increment|index|indexes|inherit|inherits|inline|input|insensitive|install|instead|intersect|invoker|isolation|label|language|large|last|lateral|leading|leakproof|level|listen|load|local|location|lock|locked|logged|macro|mapping|match|materialized|maxvalue|method|minute|minvalue|mode|month|move|name|names|new|next|no|nothing|notify|nowait|nulls|object|of|off|oids|old|only|operator|option|options|ordinality|others|out|overriding|owned|owner|parallel|parser|partial|passing|password|plans|policy|position|pragma|preceding|prepare|prepared|preserve|prior|privileges|procedural|procedure|program|publication|quote|range|read|reassign|recheck|recursive|ref|referencing|refresh|reindex|relative|release|rename|repeatable|replace|replica|reset|restart|returns|revoke|role|rollback|rollup|routine|routines|row|rows|rule|savepoint|schema|schemas|scroll|search|second|security|sequence|sequences|serializable|server|session|share|show|simple|skip|snapshot|sql|stable|standalone|start|statement|statistics|stdin|stdout|storage|stored|strict|strip|subscription|summarize|support|symmetric|sysid|system|tables|tablespace|temp|template|temporary|text|ties|trailing|transaction|transform|trigger|truncate|trusted|type|types|unbounded|uncommitted|unencrypted|unknown|unlisten|unlogged|until|vacuum|valid|validate|validator|value|varying|version|view|views|volatile|whitespace|window|within|without|work|wrapper|write|xmlattributes|xmlconcat|xmlelement|xmlexists|xmlforest|xmlnamespaces|xmlparse|xmlpi|xmlroot|xmlserialize|xmltable|year|yes|zone)\\b",
+					"name": "keyword.other.sql"
+				}
+			]
+		},
+		"variables": {
+			"patterns": [
+				{
+					"match": "(\\$)\\w+",
+					"name": "variable.other.sql"
+				}
+			]
+		}
+	}
+}

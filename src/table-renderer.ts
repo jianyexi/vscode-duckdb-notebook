@@ -26,7 +26,7 @@ export function renderResultToHtml(result: QueryResult): string {
         .duckdb-result { font-family: var(--vscode-editor-font-family); font-size: var(--vscode-editor-font-size); color: var(--vscode-foreground); }
         .duckdb-result table { border-collapse: collapse; width: 100%; }
         .duckdb-result th { background: var(--vscode-editor-selectionBackground); padding: 4px 8px; text-align: left; border: 1px solid var(--vscode-panel-border); font-weight: 600; position: sticky; top: 0; }
-        .duckdb-result td { padding: 3px 8px; border: 1px solid var(--vscode-panel-border); }
+        .duckdb-result td { padding: 3px 8px; text-align: left; border: 1px solid var(--vscode-panel-border); }
         .duckdb-result tr:nth-child(even) { background: var(--vscode-list-hoverBackground); }
         .duckdb-result .meta { padding: 4px 0; color: var(--vscode-descriptionForeground); font-size: 0.9em; }
     </style>
