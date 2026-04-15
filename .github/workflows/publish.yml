@@ -14,6 +14,7 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: true
       matrix:
         include:
           - os: windows-latest
@@ -77,11 +78,46 @@ jobs:
           merge-multiple: true
           path: vsix
 
-      - name: List VSIX files
-        run: ls -la vsix/
+      - name: Verify all platform VSIX files
+        run: |
+          EXPECTED=3
+          COUNT=$(ls vsix/*.vsix 2>/dev/null | wc -l)
+          echo "Found $COUNT VSIX files (expected $EXPECTED)"
+          ls -la vsix/
+          if [ "$COUNT" -ne "$EXPECTED" ]; then
+            echo "::error::Expected $EXPECTED VSIX files but found $COUNT. Aborting publish."
+            exit 1
+          fi
+          for f in vsix/*.vsix; do
+            SIZE=$(stat -c%s "$f")
+            echo "$f: ${SIZE} bytes"
+            if [ "$SIZE" -lt 1000 ]; then
+              echo "::error::VSIX file $f is suspiciously small (${SIZE} bytes). Aborting."
+              exit 1
+            fi
+          done
 
       - name: Publish to VS Code Marketplace
-        run: npx @vscode/vsce publish --packagePath vsix/*.vsix
+        run: |
+          FAILED=0
+          for f in vsix/*.vsix; do
+            echo "Publishing $f ..."
+            if OUTPUT=$(npx @vscode/vsce publish --packagePath "$f" 2>&1); then
+              echo "✅ Published $f"
+            else
+              if echo "$OUTPUT" | grep -qi "already exists"; then
+                echo "⚠️ Skipped $f (already published)"
+              else
+                echo "❌ Failed to publish $f"
+                echo "$OUTPUT"
+                FAILED=1
+              fi
+            fi
+          done
+          if [ "$FAILED" -ne 0 ]; then
+            echo "::error::One or more VSIX files failed to publish (not due to already existing)."
+            exit 1
+          fi
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
