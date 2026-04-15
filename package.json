@@ -2,7 +2,7 @@
   "name": "duckdb-notebook",
   "displayName": "DuckDB Jupyter Kernel",
   "description": "DuckDB SQL kernel for Jupyter notebooks with language server support",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "duckdb-notebook",
   "license": "MIT",
   "repository": {
