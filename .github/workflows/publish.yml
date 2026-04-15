@@ -1,0 +1,91 @@
+name: Build and Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to VS Code Marketplace'
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: win32-x64
+            npm_arch: x64
+          - os: macos-latest
+            target: darwin-arm64
+            npm_arch: arm64
+          - os: macos-13
+            target: darwin-x64
+            npm_arch: x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install platform-specific DuckDB bindings
+        shell: bash
+        run: |
+          # Read the version from @duckdb/node-bindings
+          BINDINGS_VERSION=$(node -e "console.log(require('./node_modules/@duckdb/node-bindings/package.json').version)")
+          PKG="@duckdb/node-bindings-${{ matrix.target }}"
+          echo "Installing ${PKG}@${BINDINGS_VERSION}"
+          npm install "${PKG}@${BINDINGS_VERSION}" --no-save --force
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Package VSIX
+        run: npx @vscode/vsce package --target ${{ matrix.target }}
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ matrix.target }}
+          path: '*.vsix'
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download all VSIX artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: vsix-*
+          merge-multiple: true
+          path: vsix
+
+      - name: List VSIX files
+        run: ls -la vsix/
+
+      - name: Publish to VS Code Marketplace
+        run: npx @vscode/vsce publish --packagePath vsix/*.vsix
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: vsix/*.vsix
+          generate_release_notes: true
