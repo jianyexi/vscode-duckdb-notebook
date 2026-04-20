@@ -97,15 +97,25 @@ export class DuckDBConnectionManager {
     private async queryBinary(sql: string): Promise<QueryResult[]> {
         const { maxRows } = this.getConfig();
         const start = Date.now();
-        const END_MARKER = '___DUCKDB_NB_END___';
+        // Use a unique sentinel per query to avoid collisions with user SQL
+        const END_MARKER = `__nb_end_${Date.now()}_${Math.random().toString(36).slice(2, 10)}__`;
 
         const proc = this.ensureBinaryProcess();
         if (!proc.stdin || !proc.stdout || !proc.stderr) {
             throw new Error('DuckDB process streams not available');
         }
 
+        // Ensure the user's SQL is terminated before we append the sentinel,
+        // otherwise DuckDB parses `<user sql>\nSELECT '...'` as a single
+        // statement and fails with "syntax error at or near SELECT".
+        // Strip trailing whitespace and any trailing line-comment remnants,
+        // then guarantee a terminating semicolon.
+        let userSql = sql.replace(/\s+$/, '');
+        if (!userSql.endsWith(';')) {
+            userSql += ';';
+        }
         // Send SQL, then a sentinel SELECT so we know when output is done
-        const fullSql = `.mode json\n${sql}\nSELECT '${END_MARKER}' AS __end;\n`;
+        const fullSql = `.mode json\n${userSql}\nSELECT '${END_MARKER}' AS __end;\n`;
 
         const result = await new Promise<{ stdout: string; error: string }>((resolve) => {
             let stdout = '';
